@@ -164,10 +164,11 @@ const dict = {
 } as const;
 
 type Dict = typeof dict.en;
+const dictionaries: Record<Lang, Dict> = dict as unknown as Record<Lang, Dict>;
 
 const Ctx = createContext<{ lang: Lang; t: Dict; setLang: (l: Lang) => void }>({
   lang: "en",
-  t: dict.en,
+  t: dictionaries.en,
   setLang: () => {},
 });
 
