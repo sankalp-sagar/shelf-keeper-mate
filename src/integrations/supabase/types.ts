@@ -14,7 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      items: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          low_stock_threshold: number
+          name: string
+          notes: string | null
+          quantity: number
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          low_stock_threshold?: number
+          name: string
+          notes?: string | null
+          quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          low_stock_threshold?: number
+          name?: string
+          notes?: string | null
+          quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pay_later: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_name: string
+          due_date: string | null
+          id: string
+          item_id: string | null
+          item_name: string
+          notes: string | null
+          paid: boolean
+          paid_at: string | null
+          quantity: number
+          taken_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_name: string
+          due_date?: string | null
+          id?: string
+          item_id?: string | null
+          item_name: string
+          notes?: string | null
+          paid?: boolean
+          paid_at?: string | null
+          quantity?: number
+          taken_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_name?: string
+          due_date?: string | null
+          id?: string
+          item_id?: string | null
+          item_name?: string
+          notes?: string | null
+          paid?: boolean
+          paid_at?: string | null
+          quantity?: number
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_later_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
