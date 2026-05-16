@@ -14,101 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
-          category: string | null
+          category_id: string | null
           created_at: string
           id: string
           low_stock_threshold: number
           name: string
           notes: string | null
           quantity: number
+          rental_price: number | null
           unit_price: number | null
           updated_at: string
         }
         Insert: {
-          category?: string | null
+          category_id?: string | null
           created_at?: string
           id?: string
           low_stock_threshold?: number
           name: string
           notes?: string | null
           quantity?: number
+          rental_price?: number | null
           unit_price?: number | null
           updated_at?: string
         }
         Update: {
-          category?: string | null
+          category_id?: string | null
           created_at?: string
           id?: string
           low_stock_threshold?: number
           name?: string
           notes?: string | null
           quantity?: number
+          rental_price?: number | null
           unit_price?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      pay_later: {
+      transaction_lines: {
         Row: {
-          amount: number
           created_at: string
-          customer_name: string
-          due_date: string | null
           id: string
           item_id: string | null
           item_name: string
-          notes: string | null
-          paid: boolean
-          paid_at: string | null
+          kind: string
+          line_total: number
           quantity: number
-          taken_at: string
+          rental_return_date: string | null
+          returned_at: string | null
+          transaction_id: string
+          unit_price: number
         }
         Insert: {
-          amount?: number
           created_at?: string
-          customer_name: string
-          due_date?: string | null
           id?: string
           item_id?: string | null
           item_name: string
-          notes?: string | null
-          paid?: boolean
-          paid_at?: string | null
+          kind?: string
+          line_total?: number
           quantity?: number
-          taken_at?: string
+          rental_return_date?: string | null
+          returned_at?: string | null
+          transaction_id: string
+          unit_price?: number
         }
         Update: {
-          amount?: number
           created_at?: string
-          customer_name?: string
-          due_date?: string | null
           id?: string
           item_id?: string | null
           item_name?: string
-          notes?: string | null
-          paid?: boolean
-          paid_at?: string | null
+          kind?: string
+          line_total?: number
           quantity?: number
-          taken_at?: string
+          rental_return_date?: string | null
+          returned_at?: string | null
+          transaction_id?: string
+          unit_price?: number
         }
         Relationships: [
           {
-            foreignKeyName: "pay_later_item_id_fkey"
+            foreignKeyName: "transaction_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transaction_lines_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          customer_name: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_due_date: string | null
+          status: string
+          taken_at: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_due_date?: string | null
+          status?: string
+          taken_at?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_due_date?: string | null
+          status?: string
+          taken_at?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_transaction: { Args: { payload: Json }; Returns: string }
+      set_line_returned: {
+        Args: { line_id: string; returned: boolean }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
