@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -7,7 +7,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ItemForm } from "@/components/ItemForm";
 import { CategoryManager } from "@/components/CategoryManager";
 import type { Tables } from "@/integrations/supabase/types";
-import { Plus, Search, Minus, Trash2, Pencil, FolderTree, ChevronRight } from "lucide-react";
+import { Plus, Search, Minus, Trash2, Pencil, FolderTree, ChevronRight, LayoutGrid, List, Image as ImageIcon, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { buildTree, descendantIds, type Category, type CategoryNode } from "@/lib/categories";
@@ -24,6 +24,8 @@ export const Route = createFileRoute("/inventory")({
   component: InventoryPage,
 });
 
+const ITEMS_PER_PAGE = 12;
+
 function InventoryPage() {
   const { t, money } = useI18n();
   const qc = useQueryClient();
@@ -33,6 +35,13 @@ function InventoryPage() {
   const [editing, setEditing] = useState<Item | null | undefined>(undefined);
   const [showCats, setShowCats] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<"list" | "grid">("list");
+  const [page, setPage] = useState(1);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter, categoryId]);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["items"],
@@ -85,6 +94,9 @@ function InventoryPage() {
     return matchSearch && matchFilter && matchCat;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
   const toggle = (id: string) => setExpanded((s) => {
     const next = new Set(s);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -123,7 +135,7 @@ function InventoryPage() {
     <>
       <AppHeader title={t.inventory.title} />
 
-      <main className="flex-1 px-5">
+      <main className="flex-1 px-5 pb-24">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -137,12 +149,21 @@ function InventoryPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chip active={filter === "all"} onClick={() => setFilter("all")}>{t.inventory.filterAll}</Chip>
           <Chip active={filter === "low"} onClick={() => setFilter("low")}>{t.inventory.filterLow}</Chip>
-          <button
-            onClick={() => setShowCats(true)}
-            className="ml-auto flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
-          >
-            <FolderTree className="h-3.5 w-3.5" /> {t.inventory.manageCategories}
-          </button>
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => setView(view === "list" ? "grid" : "list")}
+              className="flex items-center gap-1 rounded-full border border-border bg-card p-1.5 text-muted-foreground hover:bg-muted"
+              title="Toggle View"
+            >
+              {view === "list" ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() => setShowCats(true)}
+              className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+            >
+              <FolderTree className="h-3.5 w-3.5" /> {t.inventory.manageCategories}
+            </button>
+          </div>
         </div>
 
         {tree.length > 0 && (
@@ -162,78 +183,176 @@ function InventoryPage() {
           </div>
         )}
 
-        <ul className="mt-4 space-y-2">
-          {isLoading && <li className="text-sm text-muted-foreground">…</li>}
+        <ul className={`mt-4 ${view === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" : "space-y-2"}`}>
+          {isLoading && <li className="col-span-full text-sm text-muted-foreground">…</li>}
           {!isLoading && filtered.length === 0 && (
-            <li className="rounded-2xl bg-muted/60 px-4 py-8 text-center text-sm text-muted-foreground">
+            <li className="col-span-full rounded-2xl bg-muted/60 px-4 py-8 text-center text-sm text-muted-foreground">
               {t.inventory.empty}
             </li>
           )}
-          {filtered.map((i) => {
+          {paginatedItems.map((i) => {
             const low = i.quantity <= i.low_stock_threshold;
             const out = i.quantity === 0;
             const catName = i.category_id ? categoryById.get(i.category_id)?.name : null;
-            return (
-              <li key={i.id} className="rounded-2xl border border-border bg-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-semibold text-foreground">{i.name}</p>
-                      {low && (
-                        <span
-                          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
-                          style={{
-                            background: out ? "var(--destructive)" : "var(--warning)",
-                            color: out ? "var(--destructive-foreground)" : "var(--warning-foreground)",
-                          }}
-                        >
-                          {out ? t.inventory.out : t.inventory.low}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            const imageUrl = i.image_urls && i.image_urls.length > 0 ? i.image_urls[0] : null;
+
+            if (view === "grid") {
+              return (
+                <li key={i.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <div className="relative aspect-square w-full bg-muted/30">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={i.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                        <ImageIcon className="h-10 w-10" />
+                      </div>
+                    )}
+                    {low && (
+                      <span
+                        className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm"
+                        style={{
+                          background: out ? "var(--destructive)" : "var(--warning)",
+                          color: out ? "var(--destructive-foreground)" : "var(--warning-foreground)",
+                        }}
+                      >
+                        {out ? t.inventory.out : t.inventory.low}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-3">
+                    <p className="line-clamp-1 font-semibold text-foreground text-sm">{i.name}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
                       {catName || t.inventory.uncategorized}{i.unit_price ? ` · ${money(i.unit_price)}` : ""}
                     </p>
-                    {i.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{i.notes}</p>}
+                    <div className="mt-auto pt-3">
+                      <div className="flex items-center justify-between rounded-full bg-secondary p-1">
+                        <button
+                          onClick={() => adjust.mutate({ id: i.id, delta: -1, current: i.quantity })}
+                          className="rounded-full p-1 text-secondary-foreground transition hover:bg-card disabled:opacity-40"
+                          disabled={i.quantity === 0}
+                          aria-label="-"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="min-w-[1.5rem] text-center font-display text-sm font-semibold tabular-nums">
+                          {i.quantity}
+                        </span>
+                        <button
+                          onClick={() => adjust.mutate({ id: i.id, delta: 1, current: i.quantity })}
+                          className="rounded-full p-1 text-secondary-foreground transition hover:bg-card"
+                          aria-label="+"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex gap-1">
+                      <button onClick={() => setEditing(i)} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-1 text-[10px] font-semibold text-foreground hover:bg-muted">
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(t.inventory.confirmDelete)) del.mutate(i.id); }}
+                        className="flex items-center justify-center rounded-lg border border-border px-2 py-1 text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
+                </li>
+              );
+            }
 
-                  <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
-                    <button
-                      onClick={() => adjust.mutate({ id: i.id, delta: -1, current: i.quantity })}
-                      className="rounded-full p-1.5 text-secondary-foreground transition hover:bg-card disabled:opacity-40"
-                      disabled={i.quantity === 0}
-                      aria-label="-"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="min-w-[1.75rem] text-center font-display text-base font-semibold tabular-nums">
-                      {i.quantity}
-                    </span>
-                    <button
-                      onClick={() => adjust.mutate({ id: i.id, delta: 1, current: i.quantity })}
-                      className="rounded-full p-1.5 text-secondary-foreground transition hover:bg-card"
-                      aria-label="+"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+            return (
+              <li key={i.id} className="flex gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
+                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted/30">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={i.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                      <ImageIcon className="h-6 w-6" />
+                    </div>
+                  )}
                 </div>
+                <div className="flex min-w-0 flex-1 flex-col py-0.5">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-semibold text-foreground">{i.name}</p>
+                    {low && (
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                        style={{
+                          background: out ? "var(--destructive)" : "var(--warning)",
+                          color: out ? "var(--destructive-foreground)" : "var(--warning-foreground)",
+                        }}
+                      >
+                        {out ? t.inventory.out : t.inventory.low}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {catName || t.inventory.uncategorized}{i.unit_price ? ` · ${money(i.unit_price)}` : ""}
+                  </p>
+                  
+                  <div className="mt-auto flex items-end justify-between gap-3 pt-2">
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditing(i)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(t.inventory.confirmDelete)) del.mutate(i.id); }}
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
 
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => setEditing(i)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border py-1.5 text-xs font-semibold text-foreground">
-                    <Pencil className="h-3 w-3" /> {t.inventory.edit}
-                  </button>
-                  <button
-                    onClick={() => { if (confirm(t.inventory.confirmDelete)) del.mutate(i.id); }}
-                    className="flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-destructive"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                    <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
+                      <button
+                        onClick={() => adjust.mutate({ id: i.id, delta: -1, current: i.quantity })}
+                        className="rounded-full p-1 text-secondary-foreground transition hover:bg-card disabled:opacity-40"
+                        disabled={i.quantity === 0}
+                        aria-label="-"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="min-w-[1.5rem] text-center font-display text-sm font-semibold tabular-nums">
+                        {i.quantity}
+                      </span>
+                      <button
+                        onClick={() => adjust.mutate({ id: i.id, delta: 1, current: i.quantity })}
+                        className="rounded-full p-1 text-secondary-foreground transition hover:bg-card"
+                        aria-label="+"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </li>
             );
           })}
         </ul>
+
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-medium text-muted-foreground">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </main>
 
       <button
