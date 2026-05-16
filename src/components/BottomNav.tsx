@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Package, ShoppingBag } from "lucide-react";
+import { Home, Package, ShoppingBag, Settings } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 export function BottomNav() {
@@ -10,6 +10,7 @@ export function BottomNav() {
     { to: "/", icon: Home, label: t.nav.dashboard },
     { to: "/inventory", icon: Package, label: t.nav.inventory },
     { to: "/sales", icon: ShoppingBag, label: t.nav.sales },
+    { to: "/admin", icon: Settings, label: t.nav.admin },
   ] as const;
 
   return (
