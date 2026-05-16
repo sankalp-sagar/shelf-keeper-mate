@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { X, Plus, Trash2 } from "lucide-react";
-import { money } from "@/lib/format";
+
 
 type Item = Tables<"items">;
 
@@ -32,7 +32,7 @@ function newLine(): Line {
 }
 
 export function TransactionForm({ onClose }: { onClose: () => void }) {
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const qc = useQueryClient();
 
   const [customer, setCustomer] = useState("");

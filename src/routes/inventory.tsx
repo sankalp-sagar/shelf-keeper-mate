@@ -9,7 +9,7 @@ import { CategoryManager } from "@/components/CategoryManager";
 import type { Tables } from "@/integrations/supabase/types";
 import { Plus, Search, Minus, Trash2, Pencil, FolderTree, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { money } from "@/lib/format";
+
 import { buildTree, descendantIds, type Category, type CategoryNode } from "@/lib/categories";
 
 type Item = Tables<"items">;
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/inventory")({
 });
 
 function InventoryPage() {
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "low">("all");
