@@ -35,25 +35,8 @@ function InventoryPage() {
   const [editing, setEditing] = useState<Item | null | undefined>(undefined);
   const [showCats, setShowCats] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [view, setView] = useState<"list" | "grid">("grid");
-  const [imageIndex, setImageIndex] = useState<Record<string, number>>({});
+  const [view, setView] = useState<"list" | "grid">("list");
   const [page, setPage] = useState(1);
-
-  const getCurrentImageIndex = (id: string, length: number) => {
-    const index = imageIndex[id] ?? 0;
-    return index >= 0 && index < length ? index : 0;
-  };
-
-  const shiftImage = (id: string, length: number, delta: number) => {
-    setImageIndex((prev) => {
-      const current = getCurrentImageIndex(id, length);
-      return { ...prev, [id]: (current + delta + length) % length };
-    });
-  };
-
-  const setImagePosition = (id: string, index: number) => {
-    setImageIndex((prev) => ({ ...prev, [id]: index }));
-  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -211,39 +194,17 @@ function InventoryPage() {
             const low = i.quantity <= i.low_stock_threshold;
             const out = i.quantity === 0;
             const catName = i.category_id ? categoryById.get(i.category_id)?.name : null;
-            const images = i.image_urls?.length ? i.image_urls : [];
-            const currentIndex = images.length ? getCurrentImageIndex(i.id, images.length) : 0;
-            const currentImageUrl = images[currentIndex] || null;
+            const imageUrl = i.image_urls && i.image_urls.length > 0 ? i.image_urls[0] : null;
 
             if (view === "grid") {
               return (
                 <li key={i.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/30">
-                    {currentImageUrl ? (
-                      <img src={currentImageUrl} alt={i.name} className="h-full w-full object-cover" />
+                  <div className="relative aspect-square w-full bg-muted/30">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={i.name} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
                         <ImageIcon className="h-10 w-10" />
-                      </div>
-                    )}
-                    {images.length > 1 && (
-                      <div className="absolute inset-x-0 top-2 flex items-center justify-between px-2">
-                        <button
-                          type="button"
-                          onClick={() => shiftImage(i.id, images.length, -1)}
-                          className="rounded-full bg-background/80 p-2 text-muted-foreground transition hover:bg-background"
-                          aria-label="Previous image"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => shiftImage(i.id, images.length, 1)}
-                          className="rounded-full bg-background/80 p-2 text-muted-foreground transition hover:bg-background"
-                          aria-label="Next image"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
                       </div>
                     )}
                     {low && (
@@ -263,20 +224,6 @@ function InventoryPage() {
                     <p className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
                       {catName || t.inventory.uncategorized}{i.unit_price ? ` · ${money(i.unit_price)}` : ""}
                     </p>
-                    {images.length > 1 && (
-                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 px-1">
-                        {images.map((url, idx) => (
-                          <button
-                            key={`${i.id}-thumb-${idx}`}
-                            type="button"
-                            onClick={() => setImagePosition(i.id, idx)}
-                            className={`shrink-0 overflow-hidden rounded-xl border ${currentIndex === idx ? "border-primary" : "border-border"} transition`}
-                          >
-                            <img src={url} alt={`${i.name} ${idx + 1}`} className="h-14 w-14 object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
                     <div className="mt-auto pt-3">
                       <div className="flex items-center justify-between rounded-full bg-secondary p-1">
                         <button
@@ -318,8 +265,8 @@ function InventoryPage() {
             return (
               <li key={i.id} className="flex gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-muted/30">
-                  {currentImageUrl ? (
-                    <img src={currentImageUrl} alt={i.name} className="h-full w-full object-cover" />
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={i.name} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
                       <ImageIcon className="h-6 w-6" />
@@ -344,20 +291,7 @@ function InventoryPage() {
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {catName || t.inventory.uncategorized}{i.unit_price ? ` · ${money(i.unit_price)}` : ""}
                   </p>
-                  {images.length > 1 && (
-                    <div className="mt-2 flex gap-2 overflow-x-auto pb-1 px-1">
-                      {images.map((url, idx) => (
-                        <button
-                          key={`${i.id}-thumb-${idx}`}
-                          type="button"
-                          onClick={() => setImagePosition(i.id, idx)}
-                          className={`shrink-0 overflow-hidden rounded-xl border ${currentIndex === idx ? "border-primary" : "border-border"}`}
-                        >
-                          <img src={url} alt={`${i.name} ${idx + 1}`} className="h-12 w-12 object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  
                   <div className="mt-auto flex items-end justify-between gap-3 pt-2">
                     <div className="flex gap-2">
                       <button onClick={() => setEditing(i)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
