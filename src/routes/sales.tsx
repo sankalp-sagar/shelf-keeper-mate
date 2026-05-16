@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { TransactionForm } from "@/components/TransactionForm";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { Tables } from "@/integrations/supabase/types";
 import { Plus, Check, RotateCcw, Trash2, ChevronDown, Calendar, PackageCheck, PackageOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -254,10 +255,10 @@ function SalesPage() {
           <div className="w-full max-w-sm rounded-t-3xl bg-card p-6 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display text-xl font-semibold">{t.sales.markPaid}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{payingTx.customer_name} · {money(payingTx.total_amount)}</p>
-            <label className="mt-4 block">
+            <div className="mt-4">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.sales.paidActualDate}</span>
-              <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-            </label>
+              <DatePicker value={paidDate} onChange={setPaidDate} />
+            </div>
             <div className="mt-4 flex gap-2">
               <button onClick={() => setPayingTx(null)} className="flex-1 rounded-lg bg-secondary py-2 text-sm font-semibold text-secondary-foreground">{t.inventory.cancel}</button>
               <button onClick={() => markPaid.mutate({ tx: payingTx, paid_at: paidDate || today })} className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground">

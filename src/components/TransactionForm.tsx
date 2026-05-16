@@ -111,6 +111,7 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["transaction_lines"] });
       qc.invalidateQueries({ queryKey: ["items"] });
       toast.success(t.common.saved);
       onClose();

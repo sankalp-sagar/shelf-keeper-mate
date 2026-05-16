@@ -20,10 +20,11 @@ export function DatePicker({
   onChange: (value: string) => void;
   className?: string;
 }) {
+  const [open, setOpen] = React.useState(false);
   const date = value ? new Date(value) : undefined;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -45,6 +46,7 @@ export function DatePicker({
             if (d) {
               const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
               onChange(localDate.toISOString().split("T")[0]);
+              setOpen(false);
             }
           }}
           initialFocus
