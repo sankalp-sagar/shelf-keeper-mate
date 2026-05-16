@@ -104,7 +104,7 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
         })),
       };
 
-      const { error } = await supabase.rpc("create_transaction", { payload: payload as unknown as never });
+      const { error } = await supabase.rpc("create_transaction", { payload: payload as unknown as import("@/integrations/supabase/types").Json });
       if (error) throw error;
     },
     onSuccess: () => {
