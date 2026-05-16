@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { X, Plus, Trash2 } from "lucide-react";
-
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Item = Tables<"items">;
 
@@ -13,8 +13,8 @@ type Line = {
   key: string;
   item_id: string;
   item_name: string;
-  quantity: number;
-  unit_price: number;
+  quantity: string;
+  unit_price: string;
   kind: "buy" | "rent";
   rental_return_date: string;
 };
@@ -24,8 +24,8 @@ function newLine(): Line {
     key: crypto.randomUUID(),
     item_id: "",
     item_name: "",
-    quantity: 1,
-    unit_price: 0,
+    quantity: "1",
+    unit_price: "0",
     kind: "buy",
     rental_return_date: "",
   };
@@ -62,10 +62,11 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
 
   const onPickItem = (key: string, id: string, kind: "buy" | "rent") => {
     const it = items.find((i) => i.id === id);
+    const price = it ? Number(kind === "rent" ? it.rental_price ?? 0 : it.unit_price ?? 0) : 0;
     updateLine(key, {
       item_id: id,
       item_name: it?.name ?? "",
-      unit_price: it ? Number(kind === "rent" ? it.rental_price ?? 0 : it.unit_price ?? 0) : 0,
+      unit_price: price.toString(),
     });
   };
 
@@ -73,9 +74,10 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
     const line = lines.find((l) => l.key === key);
     if (!line) return;
     const it = items.find((i) => i.id === line.item_id);
+    const price = it ? Number(kind === "rent" ? it.rental_price ?? 0 : it.unit_price ?? 0) : Number(line.unit_price);
     updateLine(key, {
       kind,
-      unit_price: it ? Number(kind === "rent" ? it.rental_price ?? 0 : it.unit_price ?? 0) : line.unit_price,
+      unit_price: price.toString(),
     });
   };
 
@@ -133,7 +135,7 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
             </Field>
 
             <Field label={t.sales.taken}>
-              <input type="date" value={takenAt} onChange={(e) => setTakenAt(e.target.value)} className="input" />
+              <DatePicker value={takenAt} onChange={setTakenAt} />
             </Field>
 
             <div>
@@ -175,16 +177,16 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
 
                       <div className="grid grid-cols-2 gap-2">
                         <Field label={t.sales.qty}>
-                          <input type="number" inputMode="numeric" min={1} value={l.quantity} onChange={(e) => updateLine(l.key, { quantity: Number(e.target.value) })} className="input" />
+                          <input type="number" inputMode="numeric" min={1} value={l.quantity} onChange={(e) => updateLine(l.key, { quantity: e.target.value.replace(/^0+(?=\d)/, "") })} className="input" />
                         </Field>
                         <Field label={t.sales.price}>
-                          <input type="number" inputMode="decimal" min={0} step="0.01" value={l.unit_price} onChange={(e) => updateLine(l.key, { unit_price: Number(e.target.value) })} className="input" />
+                          <input type="number" inputMode="decimal" min={0} step="0.01" value={l.unit_price} onChange={(e) => updateLine(l.key, { unit_price: e.target.value.replace(/^0+(?=\d)/, "") })} className="input" />
                         </Field>
                       </div>
 
                       {l.kind === "rent" && (
                         <Field label={t.sales.returnBy}>
-                          <input type="date" value={l.rental_return_date} onChange={(e) => updateLine(l.key, { rental_return_date: e.target.value })} className="input" />
+                          <DatePicker value={l.rental_return_date} onChange={(d) => updateLine(l.key, { rental_return_date: d })} />
                         </Field>
                       )}
 
@@ -205,7 +207,7 @@ export function TransactionForm({ onClose }: { onClose: () => void }) {
               </div>
               {status === "pending" && (
                 <Field label={t.sales.promisedDate}>
-                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input" />
+                  <DatePicker value={dueDate} onChange={setDueDate} />
                 </Field>
               )}
             </div>
