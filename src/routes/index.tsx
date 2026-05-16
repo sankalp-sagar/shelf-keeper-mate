@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
-import { AlertTriangle, Package, Receipt, Plus, ArrowRight, PackageCheck } from "lucide-react";
-import { money } from "@/lib/format";
+import { AlertTriangle, Package, Receipt, Plus, ArrowRight, PackageCheck, Clock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Item = Tables<"items">;
@@ -22,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-  const { t } = useI18n();
+  const { t, lang, money } = useI18n();
 
   const { data: items = [] } = useQuery({
     queryKey: ["items"],
@@ -68,6 +67,18 @@ function Dashboard() {
   const overdueRentals = rentalsOut.filter((l) => l.rental_return_date && l.rental_return_date < today).length;
   const catById = new Map(categories.map((c) => [c.id, c]));
 
+  // Open tabs = anyone with unpaid balance OR an active rental
+  const txById = new Map(txs.map((tx) => [tx.id, tx]));
+  const txIdsWithActiveRental = new Set(rentalsOut.map((l) => l.transaction_id));
+  const openTabIds = new Set<string>([
+    ...pending.map((tx) => tx.id),
+    ...txIdsWithActiveRental,
+  ]);
+  const openTabs = Array.from(openTabIds)
+    .map((id) => txById.get(id))
+    .filter((tx): tx is Transaction => !!tx)
+    .sort((a, b) => (a.taken_at < b.taken_at ? 1 : -1));
+
   return (
     <>
       <AppHeader />
@@ -85,7 +96,7 @@ function Dashboard() {
             icon={<Receipt className="h-4 w-4" />}
             label={t.dashboard.outstanding}
             value={money(owed)}
-            sub={`${pending.length} · ${t.dashboard.openTabs}`}
+            sub={`${openTabs.length} · ${t.dashboard.openTabs}`}
           />
           <StatCard
             icon={<Package className="h-4 w-4" />}
@@ -135,23 +146,41 @@ function Dashboard() {
 
         <section className="mt-7">
           <SectionHeader title={t.dashboard.openTabs} to="/sales" />
-          {pending.length === 0 ? (
-            <p className="rounded-2xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">{t.sales.empty}</p>
+          {openTabs.length === 0 ? (
+            <p className="rounded-2xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">{t.dashboard.noOpenTabs}</p>
           ) : (
             <ul className="space-y-2">
-              {pending.slice(0, 4).map((tx) => (
-                <li key={tx.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{tx.customer_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {tx.payment_due_date ? `${t.sales.due}: ${tx.payment_due_date}` : ""}
-                    </p>
-                  </div>
-                  <span className="ml-3 shrink-0 font-display text-base font-semibold text-primary">
-                    {money(tx.total_amount)}
-                  </span>
-                </li>
-              ))}
+              {openTabs.slice(0, 6).map((tx) => {
+                const isPending = tx.status === "pending";
+                const hasRental = txIdsWithActiveRental.has(tx.id);
+                return (
+                  <li key={tx.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-foreground">{tx.customer_name}</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase">
+                        {isPending && (
+                          <span className="rounded-full px-1.5 py-0.5" style={{ background: "color-mix(in oklab, var(--accent) 30%, transparent)", color: "var(--accent-foreground)" }}>
+                            {t.dashboard.unpaid}
+                          </span>
+                        )}
+                        {hasRental && (
+                          <span className="rounded-full px-1.5 py-0.5" style={{ background: "color-mix(in oklab, var(--primary) 18%, transparent)", color: "var(--primary)" }}>
+                            <Clock className="mr-0.5 inline h-2.5 w-2.5" /> {t.dashboard.activeRental}
+                          </span>
+                        )}
+                        {tx.payment_due_date && isPending && (
+                          <span className="text-muted-foreground normal-case">· {t.sales.due}: {tx.payment_due_date}</span>
+                        )}
+                      </div>
+                    </div>
+                    {isPending && (
+                      <span className="ml-3 shrink-0 font-display text-base font-semibold text-primary">
+                        {money(tx.total_amount)}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

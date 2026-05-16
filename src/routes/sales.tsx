@@ -8,7 +8,7 @@ import { TransactionForm } from "@/components/TransactionForm";
 import type { Tables } from "@/integrations/supabase/types";
 import { Plus, Check, RotateCcw, Trash2, ChevronDown, Calendar, PackageCheck, PackageOpen } from "lucide-react";
 import { toast } from "sonner";
-import { money, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
 type Transaction = Tables<"transactions">;
 type Line = Tables<"transaction_lines">;
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/sales")({
 type Filter = "pending" | "paid" | "rentals" | "all";
 
 function SalesPage() {
-  const { t, lang } = useI18n();
+  const { t, lang, money } = useI18n();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("pending");
   const [creating, setCreating] = useState(false);
