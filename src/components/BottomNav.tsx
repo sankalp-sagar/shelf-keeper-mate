@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Package, Receipt } from "lucide-react";
+import { Home, Package, ShoppingBag } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 export function BottomNav() {
@@ -9,7 +9,7 @@ export function BottomNav() {
   const items = [
     { to: "/", icon: Home, label: t.nav.dashboard },
     { to: "/inventory", icon: Package, label: t.nav.inventory },
-    { to: "/fiado", icon: Receipt, label: t.nav.fiado },
+    { to: "/sales", icon: ShoppingBag, label: t.nav.sales },
   ] as const;
 
   return (
