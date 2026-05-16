@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { BottomNav } from "@/components/BottomNav";
+import { LowStockWatcher } from "@/components/LowStockWatcher";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -94,6 +95,7 @@ function RootComponent() {
           <Outlet />
         </div>
         <BottomNav />
+        <LowStockWatcher />
         <Toaster position="top-center" richColors />
       </I18nProvider>
     </QueryClientProvider>
