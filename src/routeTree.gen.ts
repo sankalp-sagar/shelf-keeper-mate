@@ -10,17 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as InventoryRouteImport } from './routes/inventory'
-import { Route as FiadoRouteImport } from './routes/fiado'
 import { Route as IndexRouteImport } from './routes/index'
 
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FiadoRoute = FiadoRouteImport.update({
-  id: '/fiado',
-  path: '/fiado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,31 +25,27 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/fiado': typeof FiadoRoute
   '/inventory': typeof InventoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/fiado': typeof FiadoRoute
   '/inventory': typeof InventoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/fiado': typeof FiadoRoute
   '/inventory': typeof InventoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fiado' | '/inventory'
+  fullPaths: '/' | '/inventory'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fiado' | '/inventory'
-  id: '__root__' | '/' | '/fiado' | '/inventory'
+  to: '/' | '/inventory'
+  id: '__root__' | '/' | '/inventory'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FiadoRoute: typeof FiadoRoute
   InventoryRoute: typeof InventoryRoute
 }
 
@@ -66,13 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof InventoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fiado': {
-      id: '/fiado'
-      path: '/fiado'
-      fullPath: '/fiado'
-      preLoaderRoute: typeof FiadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,9 +70,18 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FiadoRoute: FiadoRoute,
   InventoryRoute: InventoryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
